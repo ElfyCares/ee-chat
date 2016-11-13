@@ -6,6 +6,8 @@
 <link rel="import" href="../iron-list/iron-list.html">
 
 <!-- Paper -->
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
 
 <!-- Third -->
 
@@ -26,6 +28,7 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
+        font-size: 1.2em;
       }
 
       /*--------------------
@@ -33,7 +36,7 @@
       --------------------*/
       .messages {
         flex: 1 1 auto;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(255, 255, 255, 1);
         overflow: hidden;
         position: relative;
         width: 100%;
@@ -53,7 +56,7 @@
         border-radius: 10px 10px 10px 0;
         background: rgba(0, 0, 0, 0.3);
         margin: 8px 0;
-        font-size: 11px;
+        font-size: 1em;
         line-height: 1.4;
         margin-left: 35px;
         position: relative;
@@ -63,7 +66,7 @@
         position: absolute;
         bottom: -15px;
         font-size: 9px;
-        color: rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.5);
       }
       .messages .message::before {
         content: '';
@@ -170,89 +173,32 @@
         margin-left: 7px;
         animation-delay: .3s;
       }
-
-      /*--------------------
-      Message Box
-      --------------------*/
-      .message-box {
-        flex: 0 1 40px;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.3);
-        padding: 10px;
-        position: relative;
-      }
-      .message-box .message-input {
-        background: none;
-        border: none;
-        outline: none !important;
-        resize: none;
-        color: rgba(255, 255, 255, 0.7);
-        font-size: 11px;
-        height: 17px;
-        margin: 0;
-        padding-right: 20px;
-        width: 265px;
-      }
-      .message-box textarea:focus:-webkit-placeholder {
-        color: transparent;
-      }
-      .message-box .message-submit {
-        position: absolute;
-        z-index: 1;
-        top: 9px;
-        right: 10px;
-        color: #fff;
-        border: none;
-        background: #248A52;
-        font-size: 10px;
-        text-transform: uppercase;
-        line-height: 1;
-        padding: 6px 10px;
-        border-radius: 10px;
-        outline: none !important;
-        transition: background .2s ease;
-      }
-      .message-box .message-submit:hover {
-        background: #1D7745;
-      }
-
-
-
-
-      /**/
+      /* END */
 
       iron-list {
         flex: 1 1 auto;
       }
-
-      .row {
-        background: gray;
-      }
     </style>
 
     <div class="messages">
-      <div class="messages-content">
-        <iron-list items="[[messages]]" as="item">
+      <div id="listScroller" class="messages-content">
+        <iron-list id="list" items="[[messages]]" as="item" scroll-target="listScroller">
           <template>
-            <!-- <div class="message message-personal">
-              <span>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
-            </div> -->
             <div>
-            <div class$="[[_messageClasses(item.userId)]]">
-              <figure class="avatar"><img src="http://s3-us-west-2.amazonaws.com/s.cdpn.io/156381/profile/profile-80_4.jpg" /></figure>
-              <span>[[item.message.text]]</span>
-              <div class="timestamp">2020</div>
+              <div class$="[[_messageClasses(item.userId)]]">
+                <figure class$="[[_avatarClasses(item.userId)]]"><img src="http://s3-us-west-2.amazonaws.com/s.cdpn.io/156381/profile/profile-80_4.jpg"/></figure>
+                <span>[[item.message.text]]</span>
+                <div class="timestamp">2020</div>
+              </div>
             </div>
-          </div>
-
           </template>
         </iron-list>
       </div>
     </div>
 
-    <div class="message-box">
-      <textarea type="text" class="message-input" placeholder="Type message..."></textarea>
-      <button type="submit" class="message-submit">Send</button>
+    <div class="h-c">
+      <paper-textarea id="messageInput" class="space" placeholder="Type message..."></paper-textarea>
+      <paper-icon-button id="sendBtn" icon="send" on-tap="_sendMessage"></paper-icon-button>
     </div>
 
   </template>
@@ -292,13 +238,46 @@
         for (var i = 0; i < 100; i++) {
           messages.push(m2)
         }
+        //
+        // for (var i = 0; i < 1000; i++) {
+        //   messages.push(m)
+        // }
 
-        this.messages = messages
+        this.set('messages', messages)
+        this._scrollToLastMessage()
+      },
+
+      _sendMessage() {
+        var input = this.$$('#messageInput')
+        var btn = this.$$('#sendBtn')
+
+        input.disabled = true
+        btn.disabled = true
+
+        var m = {}
+        m.message = {}
+        m.message.text = input.value
+        this.push('messages', m)
+        this._scrollToLastMessage()
+
+        input.value = ''
+
+      },
+
+      _scrollToLastMessage() {
+        if (!this.messages || !this.messages.length === 0) return
+        this.async(function() {
+          this.$.list.scrollToIndex(this.messages.length - 1)
+        }.bind(this))
+      },
+
+      _avatarClasses(userId) {
+        return userId === 11 ? 'hidden' : 'avatar'
       },
 
       _messageClasses(userId) {
         return userId === 11 ? 'message message-personal' : 'message'
-      }
+      },
     });
   </script>
 </dom-module>
