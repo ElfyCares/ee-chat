@@ -1,0 +1,304 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!-- Elfy -->
+
+<!-- Iron -->
+<link rel="import" href="../iron-list/iron-list.html">
+
+<!-- Paper -->
+
+<!-- Third -->
+
+<!-- My -->
+
+<!--
+`ee-chat`
+
+
+@demo demo/index.html
+-->
+
+<dom-module id="ee-chat">
+  <template>
+    <style is="custom-style" include="shared-styles">
+      :host {
+        display: block;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /*--------------------
+      Messages http://codepen.io/supah/pen/jqOBqp?editors=1010
+      --------------------*/
+      .messages {
+        flex: 1 1 auto;
+        color: rgba(255, 255, 255, 0.5);
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+      .messages .messages-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 101%;
+        width: 100%;
+        overflow: scroll;
+      }
+      .messages .message {
+        clear: both;
+        float: left;
+        padding: 6px 10px 7px;
+        border-radius: 10px 10px 10px 0;
+        background: rgba(0, 0, 0, 0.3);
+        margin: 8px 0;
+        font-size: 11px;
+        line-height: 1.4;
+        margin-left: 35px;
+        position: relative;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+      }
+      .messages .message .timestamp {
+        position: absolute;
+        bottom: -15px;
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+      .messages .message::before {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        border-top: 6px solid rgba(0, 0, 0, 0.3);
+        left: 0;
+        border-right: 7px solid transparent;
+      }
+      .messages .message .avatar {
+        position: absolute;
+        z-index: 1;
+        bottom: -15px;
+        left: -35px;
+        border-radius: 30px;
+        width: 30px;
+        height: 30px;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        border: 2px solid rgba(255, 255, 255, 0.24);
+      }
+      .messages .message .avatar img {
+        width: 100%;
+        height: auto;
+      }
+      .messages .message.message-personal {
+        float: right;
+        color: #fff;
+        text-align: right;
+        background: linear-gradient(120deg, #248A52, #257287);
+        border-radius: 10px 10px 0 10px;
+      }
+      .messages .message.message-personal::before {
+        left: auto;
+        right: 0;
+        border-right: none;
+        border-left: 5px solid transparent;
+        border-top: 4px solid #257287;
+        bottom: -4px;
+      }
+      .messages .message:last-child {
+        margin-bottom: 30px;
+      }
+      .messages .message.new {
+        transform: scale(0);
+        transform-origin: 0 0;
+        animation: bounce 500ms linear both;
+      }
+      .messages .message.loading::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        margin-top: 4px;
+        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+        border: none;
+        animation-delay: .15s;
+      }
+      .messages .message.loading span {
+        display: block;
+        font-size: 0;
+        width: 20px;
+        height: 10px;
+        position: relative;
+      }
+      .messages .message.loading span::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        margin-top: 4px;
+        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+        margin-left: -7px;
+      }
+      .messages .message.loading span::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        margin-top: 4px;
+        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+        margin-left: 7px;
+        animation-delay: .3s;
+      }
+
+      /*--------------------
+      Message Box
+      --------------------*/
+      .message-box {
+        flex: 0 1 40px;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 10px;
+        position: relative;
+      }
+      .message-box .message-input {
+        background: none;
+        border: none;
+        outline: none !important;
+        resize: none;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 11px;
+        height: 17px;
+        margin: 0;
+        padding-right: 20px;
+        width: 265px;
+      }
+      .message-box textarea:focus:-webkit-placeholder {
+        color: transparent;
+      }
+      .message-box .message-submit {
+        position: absolute;
+        z-index: 1;
+        top: 9px;
+        right: 10px;
+        color: #fff;
+        border: none;
+        background: #248A52;
+        font-size: 10px;
+        text-transform: uppercase;
+        line-height: 1;
+        padding: 6px 10px;
+        border-radius: 10px;
+        outline: none !important;
+        transition: background .2s ease;
+      }
+      .message-box .message-submit:hover {
+        background: #1D7745;
+      }
+
+
+
+
+      /**/
+
+      iron-list {
+        flex: 1 1 auto;
+      }
+
+      .row {
+        background: gray;
+      }
+    </style>
+
+    <div class="messages">
+      <div class="messages-content">
+        <iron-list items="[[messages]]" as="item">
+          <template>
+            <!-- <div class="message message-personal">
+              <span>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</span>
+            </div> -->
+            <div>
+            <div class$="[[_messageClasses(item.userId)]]">
+              <figure class="avatar"><img src="http://s3-us-west-2.amazonaws.com/s.cdpn.io/156381/profile/profile-80_4.jpg" /></figure>
+              <span>[[item.message.text]]</span>
+              <div class="timestamp">2020</div>
+            </div>
+          </div>
+
+          </template>
+        </iron-list>
+      </div>
+    </div>
+
+    <div class="message-box">
+      <textarea type="text" class="message-input" placeholder="Type message..."></textarea>
+      <button type="submit" class="message-submit">Send</button>
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+
+      is: 'ee-chat',
+
+      properties: {
+
+        visitId: {
+          type: Number,
+        },
+
+        messages: {
+          type: Array,
+          value() { return [] },
+        },
+      },
+
+      attached() {
+        var messages = []
+        var m = {}
+
+        m = {}
+        m.userId = 11
+        m.message = {}
+        m.message.text = 'Hi, how are you?'
+        messages.push(m)
+
+        var m2 = {}
+        m2.userId = 5
+        m2.message = {}
+        m2.message.text = 'Hi, how are you?'
+        messages.push(m2)
+
+        for (var i = 0; i < 100; i++) {
+          messages.push(m2)
+        }
+
+        this.messages = messages
+      },
+
+      _messageClasses(userId) {
+        return userId === 11 ? 'message message-personal' : 'message'
+      }
+    });
+  </script>
+</dom-module>
