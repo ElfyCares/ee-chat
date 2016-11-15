@@ -1,0 +1,277 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!-- Elfy -->
+<link rel="import" href="../ee-helper-behavior/ee-helper-behavior.html">
+
+<!-- Iron -->
+<link rel="import" href="../iron-list/iron-list.html">
+
+<!-- Paper -->
+<link rel="import" href="../paper-input/paper-textarea.html">
+<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-tooltip/paper-tooltip.html">
+
+<!-- Third -->
+<link rel="import" href="../initials-placeholder/initials-placeholder.html">
+
+<!-- My -->
+
+<!--
+`ee-chat`
+
+
+@demo demo/index.html
+-->
+
+<dom-module id="ee-chat-view">
+  <template>
+    <style is="custom-style" include="shared-styles">
+      :host {
+        display: block;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        font-size: 1.2em;
+      }
+
+      /*--------------------
+      Messages http://codepen.io/supah/pen/jqOBqp?editors=1010
+      --------------------*/
+      .messages {
+        flex: 1 1 auto;
+        color: rgba(255, 255, 255, 1);
+        overflow: hidden;
+        position: relative;
+        width: 100%;
+      }
+      .messages .messages-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 101%;
+        width: 100%;
+        overflow: scroll;
+      }
+      .messages .message {
+        clear: both;
+        float: left;
+        padding: 6px 10px 7px;
+        border-radius: 10px 10px 10px 0;
+        background: rgba(0, 0, 0, 0.3);
+        margin: 8px 0;
+        font-size: 1em;
+        line-height: 1.4;
+        margin-left: 35px;
+        position: relative;
+      }
+      .messages .message .timestamp {
+        position: absolute;
+        bottom: -15px;
+        font-size: 9px;
+        color: rgba(0, 0, 0, 0.8);
+      }
+      .messages .message::before {
+        content: '';
+        position: absolute;
+        bottom: -6px;
+        border-top: 6px solid rgba(0, 0, 0, 0.3);
+        left: 0;
+        border-right: 7px solid transparent;
+      }
+      .messages .message .avatar {
+        position: absolute;
+        z-index: 1;
+        bottom: -15px;
+        left: -35px;
+        border-radius: 30px;
+        width: 30px;
+        height: 30px;
+        overflow: hidden;
+        margin: 0;
+        padding: 0;
+        border: 2px solid rgba(255, 255, 255, 0.24);
+      }
+      .messages .message .avatar img {
+        width: 100%;
+        height: auto;
+      }
+      .messages .message.message-personal {
+        float: right;
+        color: #fff;
+        text-align: right;
+        background: linear-gradient(120deg, #248A52, #257287);
+        border-radius: 10px 10px 0 10px;
+      }
+      .messages .message.message-personal::before {
+        left: auto;
+        right: 0;
+        border-right: none;
+        border-left: 5px solid transparent;
+        border-top: 4px solid #257287;
+        bottom: -4px;
+      }
+      .messages .message:last-child {
+        margin-bottom: 30px;
+      }
+      .messages .message.new {
+        transform: scale(0);
+        transform-origin: 0 0;
+        animation: bounce 500ms linear both;
+      }
+      .messages .message.loading::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        margin-top: 4px;
+        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+        border: none;
+        animation-delay: .15s;
+      }
+      .messages .message.loading span {
+        display: block;
+        font-size: 0;
+        width: 20px;
+        height: 10px;
+        position: relative;
+      }
+      .messages .message.loading span::before {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        margin-top: 4px;
+        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+        margin-left: -7px;
+      }
+      .messages .message.loading span::after {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        content: '';
+        display: block;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        z-index: 2;
+        margin-top: 4px;
+        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
+        margin-left: 7px;
+        animation-delay: .3s;
+      }
+      /* END */
+
+      iron-list {
+        flex: 1 1 auto;
+      }
+    </style>
+
+    <div class="messages">
+      <div id="listScroller" class="messages-content">
+        <iron-list id="list" items="[[messages]]" as="item" scroll-target="listScroller">
+          <template>
+            <div>
+              <div class$="[[_messageClasses(item.userId)]]">
+                <figure class$="[[_avatarClasses(item.userId)]]">
+                  <img hidden$="[[!item.senderAvatar]]" src$="[[item.senderAvatar]]"/>
+                  <initials-placeholder hidden$="[[item.senderAvatar]]"
+                    size="25"
+                    first-name="[[item.senderFirstName]]"
+                    last-name="[[item.senderLastName]]">
+                  </initials-placeholder>
+                </figure>
+
+                <span>[[item.message.text]]</span>
+                <div class="timestamp">
+                  <span>[[_formatTime(item.createdAt)]]</span>
+                </div>
+                <paper-tooltip position="top">[[item.senderFirstName]] [[item.senderLastName]]</paper-tooltip>
+              </div>
+            </div>
+          </template>
+        </iron-list>
+      </div>
+    </div>
+
+    <div class="h-c">
+      <paper-textarea id="messageInput" class="space" placeholder="Type message..." disabled="[[disabled]]"></paper-textarea>
+      <paper-icon-button id="sendBtn" icon="send" on-tap="_sendMessage" disabled="[[disabled]]"></paper-icon-button>
+    </div>
+
+  </template>
+  <script>
+    Polymer({
+
+      is: 'ee-chat-view',
+
+      behaviors: [
+        Elfy.EEHelperBehavior,
+      ],
+
+      properties: {
+
+        disabled: {
+          type: Boolean,
+          value: false,
+          notify: true,
+          observer: '_disabledChanged'
+        },
+
+        messages: {
+          type: Array,
+          value() { return [] },
+        },
+
+        meId: {
+          type: Number,
+        },
+      },
+
+      observers: [
+        '_scrollToLastMessage(messages, messages.*)'
+      ],
+
+      _sendMessage() {
+        if (this.$.messageInput.value.length < 1) return
+        this.fire('send-message', this.$.messageInput.value)
+      },
+
+      _scrollToLastMessage() {
+        if (!this.messages || !this.messages.length === 0) return
+        this.async(function() {
+          this.$.list.scrollToIndex(this.messages.length - 1)
+        }.bind(this))
+      },
+
+      _disabledChanged(disabled) {
+        if (!disabled) {
+          this.$.messageInput.value = ''
+        }
+      },
+
+      _avatarClasses(userId) {
+        return userId === this.meId ? 'hidden' : 'avatar'
+      },
+
+      _messageClasses(userId) {
+        return userId === this.meId ? 'message message-personal' : 'message'
+      },
+    });
+  </script>
+</dom-module>

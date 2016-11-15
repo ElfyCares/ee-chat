@@ -1,0 +1,54 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<dom-module id="ee-chat-settings">
+  <script>
+    Polymer({
+      is: 'ee-chat-settings',
+
+      properties: {
+        pubnubPublishKey: {
+          type: String,
+          notify: true,
+          readOnly: true
+        },
+
+        pubnubSubscribeKey: {
+          type: String,
+          notify: true,
+          readOnly: true
+        },
+
+        pubnubToken: {
+          type: String,
+          notify: true,
+          readOnly: true
+        },
+
+        cipherKey: {
+          type: String,
+          notify: true,
+          readOnly: true
+        },
+
+        visitId: {
+          type: String,
+        },
+      },
+
+      observers: [
+        '_loadSettings(visitId)'
+      ],
+
+      _loadSettings(visitId) {
+        if (!visitId) return
+        App.queryadapter.GET('message_settings/?visit_id=' + visitId)
+          .then((response)=> {
+            this._setPubnubPublishKey(response.data.pubnub_publish_key)
+            this._setPubnubSubscribeKey(response.data.pubnub_subscribe_key)
+            this._setPubnubToken(response.data.pubnub_token)
+            this._setCipherKey(response.data.cipher_key)
+          })
+      }
+    });
+  </script>
+</dom-module>

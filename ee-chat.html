@@ -1,18 +1,25 @@
 <link rel="import" href="../polymer/polymer.html">
 
+<!-- App -->
+<link rel="import" href="../app-route/app-route.html">
+<link rel="import" href="../app-route/app-location.html">
+
 <!-- Elfy -->
+<link rel="import" href="../elfy-api/elfy-api.html">
+<link rel="import" href="../js-data-behaviors/js-data-collection-behavior.html">
+<link rel="import" href="../js-data-behaviors/js-data-record-behavior.html">
+<link rel="import" href="../ee-helper-behavior/ee-helper-behavior.html">
 
 <!-- Iron -->
-<link rel="import" href="../iron-list/iron-list.html">
 
 <!-- Paper -->
-<link rel="import" href="../paper-input/paper-textarea.html">
-<link rel="import" href="../paper-icon-button/paper-icon-button.html">
+<link rel="import" href="../paper-toast/paper-toast.html">
 
 <!-- Third -->
 
 <!-- My -->
-
+<link rel="import" href="ee-chat-view.html">
+<link rel="import" href="ee-chat-settings.html">
 <!--
 `ee-chat`
 
@@ -22,262 +29,258 @@
 
 <dom-module id="ee-chat">
   <template>
-    <style is="custom-style" include="shared-styles">
-      :host {
-        display: block;
-        height: 100vh;
-        display: flex;
-        flex-direction: column;
-        font-size: 1.2em;
-      }
+    <style is="custom-style" include="shared-styles"></style>
 
-      /*--------------------
-      Messages http://codepen.io/supah/pen/jqOBqp?editors=1010
-      --------------------*/
-      .messages {
-        flex: 1 1 auto;
-        color: rgba(255, 255, 255, 1);
-        overflow: hidden;
-        position: relative;
-        width: 100%;
-      }
-      .messages .messages-content {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 101%;
-        width: 100%;
-        overflow: scroll;
-      }
-      .messages .message {
-        clear: both;
-        float: left;
-        padding: 6px 10px 7px;
-        border-radius: 10px 10px 10px 0;
-        background: rgba(0, 0, 0, 0.3);
-        margin: 8px 0;
-        font-size: 1em;
-        line-height: 1.4;
-        margin-left: 35px;
-        position: relative;
-        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
-      }
-      .messages .message .timestamp {
-        position: absolute;
-        bottom: -15px;
-        font-size: 9px;
-        color: rgba(255, 255, 255, 0.5);
-      }
-      .messages .message::before {
-        content: '';
-        position: absolute;
-        bottom: -6px;
-        border-top: 6px solid rgba(0, 0, 0, 0.3);
-        left: 0;
-        border-right: 7px solid transparent;
-      }
-      .messages .message .avatar {
-        position: absolute;
-        z-index: 1;
-        bottom: -15px;
-        left: -35px;
-        border-radius: 30px;
-        width: 30px;
-        height: 30px;
-        overflow: hidden;
-        margin: 0;
-        padding: 0;
-        border: 2px solid rgba(255, 255, 255, 0.24);
-      }
-      .messages .message .avatar img {
-        width: 100%;
-        height: auto;
-      }
-      .messages .message.message-personal {
-        float: right;
-        color: #fff;
-        text-align: right;
-        background: linear-gradient(120deg, #248A52, #257287);
-        border-radius: 10px 10px 0 10px;
-      }
-      .messages .message.message-personal::before {
-        left: auto;
-        right: 0;
-        border-right: none;
-        border-left: 5px solid transparent;
-        border-top: 4px solid #257287;
-        bottom: -4px;
-      }
-      .messages .message:last-child {
-        margin-bottom: 30px;
-      }
-      .messages .message.new {
-        transform: scale(0);
-        transform-origin: 0 0;
-        animation: bounce 500ms linear both;
-      }
-      .messages .message.loading::before {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        content: '';
-        display: block;
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.5);
-        z-index: 2;
-        margin-top: 4px;
-        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
-        border: none;
-        animation-delay: .15s;
-      }
-      .messages .message.loading span {
-        display: block;
-        font-size: 0;
-        width: 20px;
-        height: 10px;
-        position: relative;
-      }
-      .messages .message.loading span::before {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        content: '';
-        display: block;
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.5);
-        z-index: 2;
-        margin-top: 4px;
-        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
-        margin-left: -7px;
-      }
-      .messages .message.loading span::after {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        content: '';
-        display: block;
-        width: 3px;
-        height: 3px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.5);
-        z-index: 2;
-        margin-top: 4px;
-        animation: ball 0.45s cubic-bezier(0, 0, 0.15, 1) alternate infinite;
-        margin-left: 7px;
-        animation-delay: .3s;
-      }
-      /* END */
+    <app-location route="{{route}}" use-hash-as-path></app-location>
+    <app-route route="{{route}}"></app-route>
 
-      iron-list {
-        flex: 1 1 auto;
-      }
-    </style>
+    <ee-chat-settings
+      visit-id="[[visitId]]"
+      pubnub-token="{{pubnubToken}}"
+      pubnub-publish-key="{{pubnubPublishKey}}"
+      pubnub-subscribe-key="{{pubnubSubscribeKey}}"
+      cipher-key="{{cipherKey}}">
+    </ee-chat-settings>
 
-    <div class="messages">
-      <div id="listScroller" class="messages-content">
-        <iron-list id="list" items="[[messages]]" as="item" scroll-target="listScroller">
-          <template>
-            <div>
-              <div class$="[[_messageClasses(item.userId)]]">
-                <figure class$="[[_avatarClasses(item.userId)]]"><img src="http://s3-us-west-2.amazonaws.com/s.cdpn.io/156381/profile/profile-80_4.jpg"/></figure>
-                <span>[[item.message.text]]</span>
-                <div class="timestamp">2020</div>
-              </div>
-            </div>
-          </template>
-        </iron-list>
-      </div>
-    </div>
+    <ee-chat-view
+      messages="[[messages]]"
+      on-send-message="_sendMessage"
+      disabled="[[disabled]]"
+      me-id="[[me.id]]">
+    </ee-chat-view>
 
-    <div class="h-c">
-      <paper-textarea id="messageInput" class="space" placeholder="Type message..."></paper-textarea>
-      <paper-icon-button id="sendBtn" icon="send" on-tap="_sendMessage"></paper-icon-button>
-    </div>
+    <paper-toast id="toast" duration="[[toastDuration]]">
+      <a on-tap="_toVisit">[[toastLinkTitle]]</a>
+    </paper-toast>
+
 
   </template>
+  <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.2.5.js"></script>
   <script>
     Polymer({
 
       is: 'ee-chat',
 
+      behaviors: [
+        Elfy.JSDataCollectionBehavior,
+        Elfy.JSDataRecordBehavior,
+        Elfy.EEHelperBehavior,
+      ],
+
+      recordName: 'message',
+
       properties: {
+
+        active: {
+          type: Boolean,
+          value: false,
+        },
+
+        route: {
+          type: Object,
+          value() { return {} },
+        },
+
+        toastLinkBasePath: {
+          type: String,
+          value: '/dashboard/visits/'
+        },
+
+        toastLinkTitle: {
+          type: String,
+          value: 'To visit'
+        },
+
+        toastDuration: {
+          type: Number,
+          value: 5000
+        },
+
+        me: {
+          type: Object,
+          value() { return {} },
+        },
+
+        profile: {
+          type: Object,
+          value() { return {} },
+        },
+
+        disabled: {
+          type: Boolean,
+          value: false,
+          notify: true
+        },
 
         visitId: {
           type: Number,
         },
 
+        message: {
+          type: Object,
+          value() { return {} },
+        },
+
         messages: {
           type: Array,
           value() { return [] },
+          notify: true
         },
+
+        pubnubPublishKey: {
+          type: String,
+        },
+
+        pubnubSubscribeKey: {
+          type: String,
+        },
+
+        pubnubToken: {
+          type: String,
+        },
+
+        cipherKey: {
+          type: String,
+        },
+
+        _pubnub: Object,
+
       },
 
-      attached() {
-        var messages = []
-        var m = {}
+      observers: [
+        '_computeRequest(active,visitId)',
+        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey)'
+      ],
 
-        m = {}
-        m.userId = 11
-        m.message = {}
-        m.message.text = 'Hi, how are you?'
-        messages.push(m)
+      _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey) {
+        if (!pubnubToken || !pubnubSubscribeKey || !pubnubPublishKey || !cipherKey) return
+        var self = this
 
-        var m2 = {}
-        m2.userId = 5
-        m2.message = {}
-        m2.message.text = 'Hi, how are you?'
-        messages.push(m2)
-
-        for (var i = 0; i < 100; i++) {
-          messages.push(m2)
+        if (this._pubnub) {
+          this._pubnub.unsubscribeAll();
         }
-        //
-        // for (var i = 0; i < 1000; i++) {
-        //   messages.push(m)
-        // }
 
-        this.set('messages', messages)
-        this._scrollToLastMessage()
+        this._pubnub = new PubNub({
+          publishKey : pubnubPublishKey,
+          subscribeKey : pubnubSubscribeKey,
+          authKey: pubnubToken,
+          cipherKey: cipherKey
+        })
+
+        this._pubnub.addListener({
+          message: function(message) {
+            self._messageReceived(message)
+          },
+        })
+
+        this._pubnub.subscribe({
+          channels: [self.visitId.toString()]
+        });
       },
 
-      _sendMessage() {
-        var input = this.$$('#messageInput')
-        var btn = this.$$('#sendBtn')
+      _computeRequest(active,visitId) {
+        if (!active) return
+        this.messages = []
+        if (!visitId) return
+        this.JSData.collections = [{'name': 'messages', 'query': {'visitId': visitId}}]
+        this.JSData.noNotify = true
+        this._loadData()
+      },
 
-        input.disabled = true
-        btn.disabled = true
+      _sendMessage(e) {
+        if (!this._pubnub) {
+          this._initPubnub(
+            this.pubnubToken,
+            this.pubnubSubscribeKey,
+            this.pubnubPublishKey,
+            this.cipherKey
+          )
+          return
+        }
+        this.disabled = true
 
-        var m = {}
+        var m = App.Message.createRecord()
         m.message = {}
-        m.message.text = input.value
-        this.push('messages', m)
-        this._scrollToLastMessage()
+        m.message.text = e.detail
+        m.visitId = this.visitId
+        m.userId = this.me.id
+        this.message = m
 
-        input.value = ''
-
+        this._publishMessage(m)
+        this._postMessage(m)
       },
 
-      _scrollToLastMessage() {
-        if (!this.messages || !this.messages.length === 0) return
-        this.async(function() {
-          this.$.list.scrollToIndex(this.messages.length - 1)
-        }.bind(this))
+      _postMessage(m) {
+        this._save()
       },
 
-      _avatarClasses(userId) {
-        return userId === 11 ? 'hidden' : 'avatar'
+      _publishMessage(message) {
+        var self = this
+
+        try {
+          message.senderFirstName = this.profile.firstName
+          message.senderLastName  = this.profile.lastName.charAt(0) + '.'
+        } catch (e) {
+          message.senderLastName = message.senderFirstName = ''
+        }
+
+        try {
+          message.senderAvatar = this.profile.avatar
+        } catch (e) {
+          message.senderAvatar = ''
+        }
+
+        this._pubnub.publish({
+            channel : self.visitId.toString(),
+            message : message,
+            callback : function(m){
+                console.log(m)
+            }
+        },
+        function (status, response) {
+            if (status.error) {
+                // handle error
+                console.log(status)
+                self._loadData()
+            } else {
+                console.log("message Published w/ timetoken", response.timetoken)
+            }
+        })
       },
 
-      _messageClasses(userId) {
-        return userId === 11 ? 'message message-personal' : 'message'
+      _messageReceived(m) {
+        if (m.message && m.message.userId && m.message.userId !== this.me.id) {
+          this.$.toast.text = m.message.senderFirstName + ' wrote: ' + m.message.message.text
+          this.$.toast.dataArgs = m.channel
+          this.$.toast.show()
+          this._playSound()
+        }
+        this.push('messages', m.message)
       },
+
+      _playSound() {
+        if (!this.active) return
+        var snd = new Audio("./newMessage.mp3"); // buffers automatically when created
+        snd.play();
+      },
+
+      _toVisit(e) {
+        var visitId = e.currentTarget.parentElement.dataArgs
+        this.set('route.path', this.toastLinkBasePath + visitId + '/?chat=true')
+      },
+
+      _respondedWithError(error) {
+        this._loadData()
+      },
+
+      _collectionLoaded() {
+        this.disabled = false
+      },
+
+      _recordCreated() {
+        this.disabled = false
+      },
+
     });
   </script>
 </dom-module>
