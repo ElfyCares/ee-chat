@@ -177,6 +177,15 @@
       }
       /* END */
 
+      .message-input-container {
+        padding: 0 6px 12px 6px;
+      }
+
+      #messageInput {
+        text-align: left;
+        padding: 0px;
+      }
+
       iron-list {
         flex: 1 1 auto;
       }
@@ -209,7 +218,7 @@
       </div>
     </div>
 
-    <div class="h-c">
+    <div class="h-c message-input-container">
       <paper-textarea id="messageInput" class="space" placeholder="Type message..." disabled="[[disabled]]"></paper-textarea>
       <paper-icon-button id="sendBtn" icon="send" on-tap="_sendMessage" disabled="[[disabled]]"></paper-icon-button>
     </div>
