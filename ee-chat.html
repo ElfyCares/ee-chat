@@ -49,11 +49,6 @@
       me-id="[[me.id]]">
     </ee-chat-view>
 
-    <paper-toast id="toast" duration="[[toastDuration]]">
-      <a on-tap="_toVisit">[[toastLinkTitle]]</a>
-    </paper-toast>
-
-
   </template>
   <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.2.5.js"></script>
   <script>
@@ -250,16 +245,26 @@
 
       _messageReceived(m) {
         if (m.message && m.message.userId && m.message.userId !== this.me.id) {
-          this.$.toast.text = m.message.senderFirstName + ' wrote: ' + m.message.message.text
-          this.$.toast.dataArgs = m.channel
-          this.$.toast.show()
+          var app = document.querySelector('app-element')
+          if (app) {
+            var toast = app.$.chatToast
+            if (toast) {
+              toast.text = m.message.senderFirstName + ' wrote: ' + m.message.message.text
+              toast.dataArgs = m.channel
+              toast.show()
+            } else {
+              console.warn('no toast found - chatToast in app-element')
+            }
+          } else {
+            console.warn('app-element not found to query toast')
+          }
           this._playSound()
         }
         this.push('messages', m.message)
       },
 
       _playSound() {
-        if (!this.active) return
+        if (this.active) return
         var snd = new Audio("./newMessage.mp3"); // buffers automatically when created
         snd.play();
       },
