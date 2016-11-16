@@ -185,6 +185,7 @@
       _sendMessage(e) {
         if (!this._pubnub) {
           this._initPubnub(
+            this.active,
             this.pubnubToken,
             this.pubnubSubscribeKey,
             this.pubnubPublishKey,
@@ -245,22 +246,27 @@
 
       _messageReceived(m) {
         if (m.message && m.message.userId && m.message.userId !== this.me.id) {
-          var app = document.querySelector('app-element')
-          if (app) {
-            var toast = app.$.chatToast
-            if (toast) {
-              toast.text = m.message.senderFirstName + ' wrote: ' + m.message.message.text
-              toast.dataArgs = m.channel
-              toast.show()
-            } else {
-              console.warn('no toast found - chatToast in app-element')
-            }
-          } else {
-            console.warn('app-element not found to query toast')
-          }
+          this._showToast(m)
           this._playSound()
         }
         this.push('messages', m.message)
+      },
+
+      _showToast(m) {
+        if (this.active) return
+        var app = document.querySelector('app-element')
+        if (app) {
+          var toast = app.$.chatToast
+          if (toast) {
+            toast.text = m.message.senderFirstName + ' wrote: ' + m.message.message.text
+            toast.dataArgs = m.channel
+            toast.show()
+          } else {
+            console.warn('no toast found - chatToast in app-element')
+          }
+        } else {
+          console.warn('app-element not found to query toast')
+        }
       },
 
       _playSound() {
