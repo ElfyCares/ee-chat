@@ -144,11 +144,11 @@
 
       observers: [
         '_computeRequest(active,visitId)',
-        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey)'
+        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,visitId)'
       ],
 
-      _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey) {
-        if (!pubnubToken || !pubnubSubscribeKey || !pubnubPublishKey || !cipherKey) return
+      _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,visitId) {
+        if (!pubnubToken || !pubnubSubscribeKey || !pubnubPublishKey || !cipherKey || !visitId) return
         var self = this
 
         if (this._pubnub) {
