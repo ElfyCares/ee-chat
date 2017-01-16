@@ -177,9 +177,8 @@
         if (!active) return
         this.messages = []
         if (!visitId) return
-        this.JSData.collections = [{'name': 'messages', 'query': {'visitId': visitId}}]
         this.JSData.noNotify = true
-        this._loadData()
+        this._loadFreshData(App.Message, 'messages', {'visitId': visitId})
       },
 
       _sendMessage(e) {
