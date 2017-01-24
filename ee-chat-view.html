@@ -34,6 +34,16 @@
         font-size: 1.2em;
       }
 
+      #list {
+        margin-top: 72px;
+      }
+
+      #listScroller, .message-wrapper {
+        -ms-transform: rotate(180deg); /* IE 9 */
+        -webkit-transform: rotate(180deg); /* Chrome, Safari, Opera */
+        transform: rotate(180deg);
+      }
+
       /*--------------------
       Messages http://codepen.io/supah/pen/jqOBqp?editors=1010
       --------------------*/
@@ -193,9 +203,10 @@
 
     <div class="messages">
       <div id="listScroller" class="messages-content">
-        <iron-list id="list" items="[[messages]]" as="item" scroll-target="listScroller">
+        <iron-list id="list" items="[[sortedMessages]]" as="item" scroll-target="listScroller">
           <template>
-            <div>
+            <div class="message-container">
+              <div class="message-wrapper">
               <div class$="[[_messageClasses(item.userId)]]">
                 <figure class$="[[_avatarClasses(item.userId)]]">
                   <img hidden$="[[!item.senderAvatar]]" src$="[[item.senderAvatar]]"/>
@@ -212,6 +223,7 @@
                 </div>
                 <paper-tooltip position="top">[[item.senderFirstName]] [[item.senderLastName]]</paper-tooltip>
               </div>
+            </div>
             </div>
           </template>
         </iron-list>
@@ -247,13 +259,19 @@
           value() { return [] },
         },
 
+        sortedMessages: {
+          type: Array,
+          value() { return [] },
+        },
+
         meId: {
           type: Number,
         },
       },
 
       observers: [
-        '_scrollToLastMessage(messages, messages.*)'
+        '_scrollToLastMessage(messages, messages.*)',
+        '_createSorted(messages, messages.*)'
       ],
 
       _sendMessage() {
@@ -261,11 +279,21 @@
         this.fire('send-message', this.$.messageInput.value)
       },
 
-      _scrollToLastMessage() {
-        if (!this.messages || !this.messages.length === 0) return
+      _createSorted(messages) {
+        var m = messages.slice()
+
         this.async(function() {
-          this.$.list.scrollToIndex(this.messages.length - 1)
-        }.bind(this))
+          var r = m.reverse()
+          this.set('sortedMessages', r)
+        }.bind(this),1)
+
+      },
+
+      _scrollToLastMessage() {
+        // if (!this.messages || !this.messages.length === 0) return
+        // this.async(function() {
+        //   this.$.list.scrollToIndex(this.messages.length - 1)
+        // }.bind(this))
       },
 
       _disabledChanged(disabled) {
