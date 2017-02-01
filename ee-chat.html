@@ -29,7 +29,34 @@
 
 <dom-module id="ee-chat">
   <template>
-    <style is="custom-style" include="shared-styles"></style>
+    <style is="custom-style" include="shared-styles">
+
+      .bubble-view {
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+        position: fixed;
+        bottom: 10px;
+        z-index: 999;
+        width: 320px;
+        height: 400px;
+        background: #fafafa;
+        right: 24px;
+
+        --ee-chat-view-header: {
+          display: block;
+          background: #0ea7ee;
+          height: 36px;
+        };
+      }
+
+      @media(max-width:600px) {
+        .bubble-view {
+          bottom: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+        }
+      }
+    </style>
 
     <app-location route="{{route}}" use-hash-as-path></app-location>
     <app-route route="{{route}}"></app-route>
@@ -42,11 +69,13 @@
       cipher-key="{{cipherKey}}">
     </ee-chat-settings>
 
-    <ee-chat-view
+    <ee-chat-view id="view" class$="[[_ifThenElse(asBubble, 'bubble-view', '')]]"
       messages="[[messages]]"
       on-send-message="_sendMessage"
       disabled="[[disabled]]"
-      me-id="[[me.id]]">
+      on-close-tapped="hideChat"
+      me-id="[[me.id]]"
+      header-title="[[headerTitle]]">
     </ee-chat-view>
 
   </template>
@@ -66,9 +95,19 @@
 
       properties: {
 
+        asBubble: {
+          type: Boolean,
+          value: false,
+        },
+
         active: {
           type: Boolean,
           value: false,
+        },
+
+        headerTitle: {
+          type: String,
+          value: '',
         },
 
         route: {
@@ -101,6 +140,7 @@
           value() { return {} },
         },
 
+        /* If true, the chat input and send button are disabled. */
         disabled: {
           type: Boolean,
           value: false,
@@ -146,6 +186,14 @@
         '_computeRequest(active,visitId)',
         '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,visitId)'
       ],
+
+      hideChat() {
+        this.$.view.classList.add('hidden')
+      },
+
+      showChat() {
+        this.$.view.classList.remove('hidden')
+      },
 
       _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,visitId) {
         if (!pubnubToken || !pubnubSubscribeKey || !pubnubPublishKey || !cipherKey || !visitId) return
