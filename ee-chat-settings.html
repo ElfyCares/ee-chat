@@ -33,14 +33,19 @@
         channelId: {
           type: String,
         },
+
+        active: {
+          type: Boolean,
+          value: false,
+        },
       },
 
       observers: [
-        '_loadSettings(channelId)'
+        '_loadSettings(channelId,active)'
       ],
 
-      _loadSettings(channelId) {
-        if (!channelId) return
+      _loadSettings(channelId,active) {
+        if (!channelId || !active) return
         App.queryadapter.GET('message_settings/?channel=' + channelId)
           .then((response)=> {
             this._setPubnubPublishKey(response.data.pubnub_publish_key)

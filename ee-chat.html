@@ -66,7 +66,8 @@
       pubnub-token="{{pubnubToken}}"
       pubnub-publish-key="{{pubnubPublishKey}}"
       pubnub-subscribe-key="{{pubnubSubscribeKey}}"
-      cipher-key="{{cipherKey}}">
+      cipher-key="{{cipherKey}}"
+      active="[[active]]">
     </ee-chat-settings>
 
     <ee-chat-view id="view" class$="[[_ifThenElse(asBubble, 'bubble-view hidden', '')]]"
@@ -204,10 +205,12 @@
       },
 
       hideChat() {
+        this.active=false
         this.$.view.classList.add('hidden')
       },
 
       showChat() {
+        this.active=true
         this.$.view.classList.remove('hidden')
       },
 
