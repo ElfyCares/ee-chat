@@ -30,18 +30,18 @@
           readOnly: true
         },
 
-        visitId: {
+        channelId: {
           type: String,
         },
       },
 
       observers: [
-        '_loadSettings(visitId)'
+        '_loadSettings(channelId)'
       ],
 
-      _loadSettings(visitId) {
-        if (!visitId) return
-        App.queryadapter.GET('message_settings/?visit_id=' + visitId)
+      _loadSettings(channelId) {
+        if (!channelId) return
+        App.queryadapter.GET('message_settings/?channel=' + channelId)
           .then((response)=> {
             this._setPubnubPublishKey(response.data.pubnub_publish_key)
             this._setPubnubSubscribeKey(response.data.pubnub_subscribe_key)

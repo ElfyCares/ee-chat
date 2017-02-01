@@ -62,7 +62,7 @@
     <app-route route="{{route}}"></app-route>
 
     <ee-chat-settings
-      visit-id="[[visitId]]"
+      channel-id="[[_channelId]]"
       pubnub-token="{{pubnubToken}}"
       pubnub-publish-key="{{pubnubPublishKey}}"
       pubnub-subscribe-key="{{pubnubSubscribeKey}}"
@@ -149,6 +149,17 @@
 
         visitId: {
           type: Number,
+          value: 0
+        },
+
+        careRecipientId: {
+          type: Number,
+          value: 0
+        },
+
+        _channelId: {
+          type: String,
+          computed: '_computeChannel(visitId,careRecipientId)'
         },
 
         message: {
@@ -183,9 +194,14 @@
       },
 
       observers: [
-        '_computeRequest(active,visitId)',
-        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,visitId)'
+        '_loadMessages(active,visitId,careRecipientId)',
+        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,_channelId)'
       ],
+
+      _computeChannel(visitId,careRecipientId) {
+        if (!visitId && !careRecipientId) return
+        return visitId ? 'vi_' + visitId.toString() : 'cr_' + careRecipientId.toString()
+      },
 
       hideChat() {
         this.$.view.classList.add('hidden')
@@ -195,8 +211,9 @@
         this.$.view.classList.remove('hidden')
       },
 
-      _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,visitId) {
-        if (!pubnubToken || !pubnubSubscribeKey || !pubnubPublishKey || !cipherKey || !visitId) return
+      _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,channelId) {
+        if (!pubnubToken || !pubnubSubscribeKey || !pubnubPublishKey || !cipherKey || !channelId) return
+
         var self = this
 
         if (this._pubnub) {
@@ -217,16 +234,17 @@
         })
 
         this._pubnub.subscribe({
-          channels: [self.visitId.toString()]
+          channels: [self._channelId]
         });
       },
 
-      _computeRequest(active,visitId) {
+      _loadMessages(active,visitId,careRecipientId) {
         if (!active) return
         this.messages = []
-        if (!visitId) return
+        var channel_id = this._computeChannel(visitId,careRecipientId)
+        if (!channel_id) return
         this.JSData.noNotify = true
-        this._loadFreshData(App.Message, 'messages', {'visitId': visitId})
+        this._loadFreshData(App.Message, 'messages', {'channel': channel_id})
       },
 
       _sendMessage(e) {
@@ -245,9 +263,15 @@
         var m = App.Message.createRecord()
         m.message = {}
         m.message.text = e.detail
-        m.visitId = this.visitId
+
         m.userId = this.me.id
         this.message = m
+
+        if (this.visitId) {
+          m.visitId = this.visitId
+        } else {
+          m.careRecipientId = this.careRecipientId
+        }
 
         this._publishMessage(m)
         this._postMessage(m)
@@ -274,7 +298,7 @@
         }
 
         this._pubnub.publish({
-            channel : self.visitId.toString(),
+            channel : self._channelId,
             message : message,
             callback : function(m){
                 console.log(m)
