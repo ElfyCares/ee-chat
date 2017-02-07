@@ -3,6 +3,7 @@
 <!-- App -->
 <link rel="import" href="../app-route/app-route.html">
 <link rel="import" href="../app-route/app-location.html">
+<link rel="import" href="../app-storage/app-localstorage/app-localstorage-document.html">
 
 <!-- Elfy -->
 <link rel="import" href="../elfy-api/elfy-api.html">
@@ -62,7 +63,7 @@
     <app-route route="{{route}}"></app-route>
 
     <ee-chat-settings
-      channel-id="[[_channelId]]"
+      channel-id="[[channel]]"
       pubnub-token="{{pubnubToken}}"
       pubnub-publish-key="{{pubnubPublishKey}}"
       pubnub-subscribe-key="{{pubnubSubscribeKey}}"
@@ -74,10 +75,13 @@
       messages="[[messages]]"
       on-send-message="_sendMessage"
       disabled="[[disabled]]"
-      on-close-tapped="hideChat"
+      on-close-tapped="_closeTapped"
       me-id="[[me.id]]"
       header-title="[[headerTitle]]">
     </ee-chat-view>
+
+    <app-localstorage-document key="chat_channel" data="{{channel}}"></app-localstorage-document>
+    <app-localstorage-document key="chat_open" data="{{opened}}"></app-localstorage-document>
 
   </template>
   <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.4.2.5.js"></script>
@@ -95,19 +99,18 @@
       recordName: 'message',
 
       properties: {
-
-        queryParams: {
-          type: Object,
-        },
-
         asBubble: {
           type: Boolean,
           value: false,
         },
 
+        /* If true, chat is opens or opens.
+         * If false, chat is closed or closes.
+         */
         opened: {
           type: Boolean,
           value: false,
+          observer: '_openedChanged'
         },
 
         active: {
@@ -123,21 +126,6 @@
         route: {
           type: Object,
           value() { return {} },
-        },
-
-        toastLinkBasePath: {
-          type: String,
-          value: '/dashboard/visits/'
-        },
-
-        toastLinkTitle: {
-          type: String,
-          value: 'To visit'
-        },
-
-        toastDuration: {
-          type: Number,
-          value: 5000
         },
 
         me: {
@@ -157,20 +145,8 @@
           notify: true
         },
 
-        visitId: {
-          type: Number,
-          value: 0
-        },
-
-        careRecipientId: {
-          type: Number,
-          value: 0
-        },
-
-        _channelId: {
+        channel: {
           type: String,
-          value: '',
-          computed: '_computeChannel(visitId,careRecipientId)'
         },
 
         message: {
@@ -205,44 +181,52 @@
       },
 
       observers: [
-        '_loadMessages(active,visitId,careRecipientId)',
-        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,_channelId)',
-        '_setQryParams(active,_channelId)',
-        '_queryParamsChanged(queryParams, queryParams.*)'
+        '_loadMessages(active,channel)',
+        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,channel)'
       ],
 
-      _queryParamsChanged(queryParams) {
-        if (!queryParams) return
-
-        if (queryParams.chat == 'open' && this.opened == false) {
-          this.showChat()
-        }
-
-        if (queryParams.chat == 'closed' && this.opened == true) {
-          this.hideChat()
+      setChannelCR(careRecipientId) {
+        if (careRecipientId) {
+          this.channel = 'cr_' + careRecipientId
         }
       },
 
-      _setQryParams(active, channelId) {
-        this.set('queryParams.channel', channelId)
-        this.set('queryParams.chat', active ? 'open' : 'closed')
+      setChannelVI(visitId) {
+        if (visitId) {
+          this.channel = 'vi_' + visitId
+        }
       },
 
-      _computeChannel(visitId,careRecipientId) {
-        if (!visitId && !careRecipientId) return
-        return visitId ? 'vi_' + visitId.toString() : 'cr_' + careRecipientId.toString()
+      openCR(careRecipientId) {
+        this.setChannelCR(careRecipientId)
+        this.open()
       },
 
-      hideChat() {
-        this.active=false
-        this.opened = false
-        this.$.view.classList.add('hidden')
+      openVI(visitId) {
+        this.setChannelVI(visitId)
+        this.open()
       },
 
-      showChat() {
-        this.active=true
+      open() {
         this.opened = true
-        this.$.view.classList.remove('hidden')
+      },
+
+      close() {
+        this.opened = false
+      },
+
+      _closeTapped() {
+        this.close()
+      },
+
+      _openedChanged(opened) {
+        if (opened) {
+          this.active=true
+          this.$.view.classList.remove('hidden')
+        } else {
+          this.active=false
+          this.$.view.classList.add('hidden')
+        }
       },
 
       _initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,channelId) {
@@ -268,17 +252,15 @@
         })
 
         this._pubnub.subscribe({
-          channels: [self._channelId]
+          channels: [self.channel]
         });
       },
 
-      _loadMessages(active,visitId,careRecipientId) {
-        if (!active) return
+      _loadMessages(active, channelId) {
+        if (!active || !channelId || channelId == '') return
         this.messages = []
-        var channel_id = this._computeChannel(visitId,careRecipientId)
-        if (!channel_id) return
         this.JSData.noNotify = true
-        this._loadFreshData(App.Message, 'messages', {'channel': channel_id})
+        this._loadFreshData(App.Message, 'messages', {'channel': channelId})
       },
 
       _sendMessage(e) {
@@ -301,10 +283,14 @@
         m.userId = this.me.id
         this.message = m
 
-        if (this.visitId) {
-          m.visitId = this.visitId
+        var channel = this.channel
+        var channelValue = channel.substring(3)
+        var channelType = channel.substring(0,2)
+
+        if (channelType=='vi') {
+          m.visitId = channelValue
         } else {
-          m.careRecipientId = this.careRecipientId
+          m.careRecipientId = channelValue
         }
 
         this._publishMessage(m)
@@ -332,7 +318,7 @@
         }
 
         this._pubnub.publish({
-            channel : self._channelId,
+            channel : self.channel,
             message : message,
             callback : function(m){
                 console.log(m)
@@ -351,38 +337,15 @@
 
       _messageReceived(m) {
         if (m.message && m.message.userId && m.message.userId !== this.me.id) {
-          this._showToast(m)
           this._playSound()
         }
         this.push('messages', m.message)
-      },
-
-      _showToast(m) {
-        if (this.active) return
-        var app = document.querySelector('app-element')
-        if (app) {
-          var toast = app.$.chatToast
-          if (toast) {
-            toast.text = m.message.senderFirstName + ' wrote: ' + m.message.message.text
-            toast.dataArgs = m.channel
-            toast.show()
-          } else {
-            console.warn('no toast found - chatToast in app-element')
-          }
-        } else {
-          console.warn('app-element not found to query toast')
-        }
       },
 
       _playSound() {
         if (this.active) return
         var snd = new Audio("./newMessage.mp3"); // buffers automatically when created
         snd.play();
-      },
-
-      _toVisit(e) {
-        var visitId = e.currentTarget.parentElement.dataArgs
-        this.set('route.path', this.toastLinkBasePath + visitId + '/?chat=true')
       },
 
       _respondedWithError(error) {
