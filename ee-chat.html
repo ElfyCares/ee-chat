@@ -96,7 +96,16 @@
 
       properties: {
 
+        queryParams: {
+          type: Object,
+        },
+
         asBubble: {
+          type: Boolean,
+          value: false,
+        },
+
+        opened: {
           type: Boolean,
           value: false,
         },
@@ -160,6 +169,7 @@
 
         _channelId: {
           type: String,
+          value: '',
           computed: '_computeChannel(visitId,careRecipientId)'
         },
 
@@ -196,8 +206,27 @@
 
       observers: [
         '_loadMessages(active,visitId,careRecipientId)',
-        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,_channelId)'
+        '_initPubnub(active,pubnubToken,pubnubSubscribeKey,pubnubPublishKey,cipherKey,_channelId)',
+        '_setQryParams(active,_channelId)',
+        '_queryParamsChanged(queryParams, queryParams.*)'
       ],
+
+      _queryParamsChanged(queryParams) {
+        if (!queryParams) return
+
+        if (queryParams.chat == 'open' && this.opened == false) {
+          this.showChat()
+        }
+
+        if (queryParams.chat == 'closed' && this.opened == true) {
+          this.hideChat()
+        }
+      },
+
+      _setQryParams(active, channelId) {
+        this.set('queryParams.channel', channelId)
+        this.set('queryParams.chat', active ? 'open' : 'closed')
+      },
 
       _computeChannel(visitId,careRecipientId) {
         if (!visitId && !careRecipientId) return
@@ -206,11 +235,13 @@
 
       hideChat() {
         this.active=false
+        this.opened = false
         this.$.view.classList.add('hidden')
       },
 
       showChat() {
         this.active=true
+        this.opened = true
         this.$.view.classList.remove('hidden')
       },
 
