@@ -1,8 +1,6 @@
 <link rel="import" href="../polymer/polymer.html">
 
 <!-- App -->
-<link rel="import" href="../app-route/app-route.html">
-<link rel="import" href="../app-route/app-location.html">
 <link rel="import" href="../app-storage/app-localstorage/app-localstorage-document.html">
 
 <!-- Elfy -->
@@ -59,9 +57,6 @@
       }
     </style>
 
-    <app-location route="{{route}}" use-hash-as-path></app-location>
-    <app-route route="{{route}}"></app-route>
-
     <ee-chat-settings
       channel-id="[[channel]]"
       pubnub-token="{{pubnubToken}}"
@@ -104,15 +99,14 @@
           value: false,
         },
 
-        /* If true, chat is opens or opens.
-         * If false, chat is closed or closes.
-         */
+        /* Makes chat visible. */
         opened: {
           type: Boolean,
           value: false,
           observer: '_openedChanged'
         },
 
+        /* Triggers load of settings and messages. */
         active: {
           type: Boolean,
           value: false,
@@ -121,11 +115,6 @@
         headerTitle: {
           type: String,
           value: '',
-        },
-
-        route: {
-          type: Object,
-          value() { return {} },
         },
 
         me: {
