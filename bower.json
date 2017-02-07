@@ -11,7 +11,8 @@
     "demo-models": "git+https://github.com/ElfyCares/demo-models",
     "ee-shared-styles": "git+https://github.com/ElfyCares/ee-shared-styles",
     "app-route": "PolymerElements/app-route#^0.9.1",
-    "initials-placeholder": "JaySunSyn/initials-placeholder#^1.0.0"
+    "initials-placeholder": "JaySunSyn/initials-placeholder#^1.0.0",
+    "app-storage": "PolymerElements/app-storage#^0.9.8"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
